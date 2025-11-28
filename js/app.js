@@ -1,43 +1,28 @@
-// Simple product list + cart using local JSON
-const productsEl = document.getElementById('products');
-const template = document.getElementById('product-card');
-const cartCount = document.getElementById('cart-count');
-const search = document.getElementById('search');
-
-let products = [];
-let cart = JSON.parse(localStorage.getItem('cart')||'[]');
-
-function renderProducts(list){
-  productsEl.innerHTML = '';
-  list.forEach(p=>{
-    const clone = template.content.cloneNode(true);
-    clone.querySelector('.card-img').src = p.image || 'https://via.placeholder.com/300x200';
-    clone.querySelector('.card-title').textContent = p.title;
-    clone.querySelector('.card-price').textContent = '₹' + p.price;
-    const btn = clone.querySelector('.add-btn');
-    btn.addEventListener('click', ()=> addToCart(p));
-    productsEl.appendChild(clone);
-  });
-}
-
-function addToCart(p){
-  cart.push(p);
-  localStorage.setItem('cart', JSON.stringify(cart));
-  cartCount.textContent = cart.length;
-  alert(p.title + ' added to cart');
-}
-
-function loadProducts(){
-  fetch('data/products.json').then(r=>r.json()).then(data=>{
-    products = data;
-    renderProducts(products);
-  });
-}
-
-search.addEventListener('input', ()=> {
-  const q = search.value.toLowerCase();
-  renderProducts(products.filter(p => p.title.toLowerCase().includes(q)));
+import Cart from './cart.js';
+const cart = new Cart();
+const grid = document.getElementById('product-grid');
+const template = document.getElementById('product-template');
+async function load(){
+const res = await fetch('data/products.json');
+const products = await res.json();
+products.forEach(p=>{
+const el = template.content.cloneNode(true);
+el.querySelector('.thumb').src = p.img;
+el.querySelector('.thumb').alt = p.title;
+el.querySelector('.title').textContent = p.title;
+el.querySelector('.price').textContent = `₹${p.price}`;
+el.querySelector('.add').addEventListener('click',()=>{cart.add(p)});
+grid.appendChild(el);
 });
-
-cartCount.textContent = cart.length;
-loadProducts();
+}
+load();
+// search
+document.getElementById('search').addEventListener('input',e=>{
+const q=e.target.value.toLowerCase();
+Array.from(grid.children).forEach(card=>{
+const title=card.querySelector('.title').textContent.toLowerCase();
+card.style.display = title.includes(q)?'':'none';
+});
+});
+// cart toggle
+document.getElementById('toggle-cart').addEventListener('click',()=>cart.togglePanel());
